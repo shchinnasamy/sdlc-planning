@@ -1,6 +1,5 @@
----
 name: SDLC Planning Agent
-'on':
+on:
   issues:
     types: [opened]
 
@@ -29,13 +28,12 @@ jobs:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-
+          
           # Configuration Secrets
-          AZURE_PROJECT_CONNECTION_STRING: >-
-            ${{ secrets.AZURE_PROJECT_CONNECTION_STRING }}
+          AZURE_PROJECT_CONNECTION_STRING: ${{ secrets.AZURE_PROJECT_CONNECTION_STRING }}
           AGENT_ID: ${{ secrets.AGENT_ID }}
           LOGIC_APP_URL: ${{ secrets.LOGIC_APP_URL }}
-
+          
           # Issue Data
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
