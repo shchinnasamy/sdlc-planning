@@ -21,6 +21,7 @@ jobs:
 
       - name: Install Dependencies
         run: pip install azure-ai-projects azure-identity requests
+        run:pip install --upgrade azure-ai-projects
 
       - name: Run Agent Script
         env:
