@@ -4,79 +4,37 @@ on:
     types: [opened]
 
 jobs:
-  run_agent:
+  plan_spec:
     if: contains(github.event.issue.labels.*.name, 'Spec')
     runs-on: ubuntu-latest
     permissions:
       issues: write
+      contents: read
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
-      - name: Install Libraries
+      - name: Install Dependencies
         run: pip install azure-ai-projects azure-identity requests
 
-      - name: Run Planning Logic
+      - name: Run Agent Script
         env:
-          # AI Project Connection String is easiest found in AI Foundry -> Project Settings -> Connection String
-          # For simplicity here, we assume standard Endpoint/Key auth if using the simpler SDK, 
-          # but the Project Client usually needs the Connection String.
-          # ACTION: Go to AI Foundry -> Project -> Settings. Copy "Project connection string".
-          PROJECT_CONNECTION_STRING: ${{ secrets.AZURE_PROJECT_CONNECTION_STRING }} 
+          # Authentication Secrets (From Step 1)
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          
+          # Configuration Secrets
+          AZURE_PROJECT_CONNECTION_STRING: ${{ secrets.AZURE_PROJECT_CONNECTION_STRING }}
           AGENT_ID: ${{ secrets.AGENT_ID }}
           LOGIC_APP_URL: ${{ secrets.LOGIC_APP_URL }}
+          
+          # Issue Data
+          ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
-        run: |
-          python -c "
-          import os, json, time, requests
-          from azure.ai.projects import AIProjectClient
-          from azure.identity import DefaultAzureCredential
-
-          # 1. Setup Client
-          # Note: Ensure you add AZURE_PROJECT_CONNECTION_STRING to GitHub Secrets
-          conn_str = os.environ['PROJECT_CONNECTION_STRING']
-          client = AIProjectClient.from_connection_string(
-              credential=DefaultAzureCredential(),
-              conn_str=conn_str
-          )
-
-          # 2. Start Thread with the Issue Body
-          thread = client.agents.create_thread()
-          client.agents.create_message(
-              thread_id=thread.id,
-              role='user',
-              content=f'Please plan this spec: {os.environ["ISSUE_BODY"]}'
-          )
-
-          # 3. Run the Agent
-          run = client.agents.create_run(thread_id=thread.id, assistant_id=os.environ['AGENT_ID'])
-
-          # 4. Loop to check status
-          while True:
-              run = client.agents.get_run(thread_id=thread.id, run_id=run.id)
-              if run.status in ['completed', 'failed', 'cancelled']:
-                  break
-              
-              if run.status == 'requires_action':
-                  # Agent wants to call the Logic App!
-                  tool_calls = run.required_action.submit_tool_outputs.tool_calls
-                  tool_outputs = []
-                  
-                  for tool in tool_calls:
-                      if tool.function.name == 'create_github_task':
-                          args = json.loads(tool.function.arguments)
-                          # Call Logic App
-                          print(f'Creating task: {args}')
-                          requests.post(os.environ['LOGIC_APP_URL'], json=args)
-                          tool_outputs.append({'tool_call_id': tool.id, 'output': 'Success'})
-                  
-                  # Tell Agent we finished the tasks
-                  client.agents.submit_tool_outputs(thread_id=thread.id, run_id=run.id, tool_outputs=tool_outputs)
-              
-              time.sleep(1)
-          "
+        run: python .github/scripts/plan_spec.py
