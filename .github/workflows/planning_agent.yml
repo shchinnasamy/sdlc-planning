@@ -50,7 +50,7 @@ jobs:
           client.agents.create_message(
               thread_id=thread.id,
               role='user',
-              content=f"Please plan this spec: {os.environ['ISSUE_BODY']}"
+              content=f'Please plan this spec: {os.environ["ISSUE_BODY"]}'             
           )
 
           # 3. Run the Agent
