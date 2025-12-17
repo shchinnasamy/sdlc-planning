@@ -1,20 +1,32 @@
-- name: Trigger Logic App
+name: Planning Agent Trigger
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  dispatch-agent:
+    # Only run if the issue is labeled correctly
+    if: github.event.label.name == 'product-feedback'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Logic App
+        # 1. Map data to Environment Variables to handle special characters safely
         env:
-          # 1. Map secrets and data to Environment Variables first
           LOGIC_APP_URL: ${{ secrets.LOGIC_APP_URL }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
           ISSUE_URL: ${{ github.event.issue.html_url }}
         run: |
-          # 2. Use jq to build the JSON object safely
-          # This handles quotes and newlines for you automatically
+          # 2. Use 'jq' to construct the JSON
+          # This creates a file named payload.json and handles all quotes/newlines automatically
           jq -n \
             --arg title "$ISSUE_TITLE" \
             --arg body "$ISSUE_BODY" \
             --arg url "$ISSUE_URL" \
             '{title: $title, body: $body, url: $url}' > payload.json
 
-          # 3. Send the file payload
+          # 3. Send the payload file to Logic Apps
           curl -X POST "$LOGIC_APP_URL" \
             -H "Content-Type: application/json" \
             -d @payload.json
