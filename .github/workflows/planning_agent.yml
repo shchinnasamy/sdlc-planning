@@ -11,17 +11,15 @@ jobs:
     steps:
       - name: Trigger Logic App
         env:
-          ISSUE_TITLE: ${{ toJSON(github.event.issue.title) }}
-          ISSUE_BODY: ${{ toJSON(github.event.issue.body) }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
           ISSUE_URL: ${{ github.event.issue.html_url }}
         run: |
-          cat > payload.json <<EOF
-          {
-            "title": ${ISSUE_TITLE},
-            "body": ${ISSUE_BODY},
-            "url": "${ISSUE_URL}"
-          }
-          EOF
+          jq -n \
+            --arg title "$ISSUE_TITLE" \
+            --arg body "$ISSUE_BODY" \
+            --arg url "$ISSUE_URL" \
+            '{title: $title, body: $body, url: $url}' | \
           curl -X POST "${{ secrets.LOGIC_APP_URL }}" \
             -H "Content-Type: application/json" \
-            -d @payload.json
+            -d @-
