@@ -1,41 +1,20 @@
-name: SDLC Planning Agent
+name: Planning Agent Trigger
+
 on:
   issues:
-    types: [opened]
+    types: [labeled]
 
 jobs:
-  plan_spec:
-    if: contains(github.event.issue.labels.*.name, 'Spec')
+  dispatch-agent:
+    if: github.event.label.name == 'product-feedback'
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
-      contents: read
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install Dependencies
-        run: pip install azure-ai-projects azure-identity requests
-        run:pip install --upgrade azure-ai-projects
-
-      - name: Run Agent Script
-        env:
-          # Authentication Secrets (From Step 1)
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          
-          # Configuration Secrets
-          AZURE_PROJECT_CONNECTION_STRING: ${{ secrets.AZURE_PROJECT_CONNECTION_STRING }}
-          AGENT_ID: ${{ secrets.AGENT_ID }}
-          LOGIC_APP_URL: ${{ secrets.LOGIC_APP_URL }}
-          
-          # Issue Data
-          ISSUE_TITLE: ${{ github.event.issue.title }}
-          ISSUE_BODY: ${{ github.event.issue.body }}
-        run: python .github/scripts/plan_spec.py
+      - name: Trigger Logic App
+        run: |
+          curl -X POST "${{ secrets.LOGIC_APP_URL }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "title": "${{ github.event.issue.title }}",
+            "body": ${{ toJSON(github.event.issue.body) }},
+            "url": "${{ github.event.issue.html_url }}"
+          }'
