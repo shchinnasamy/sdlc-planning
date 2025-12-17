@@ -15,6 +15,13 @@ jobs:
           ISSUE_BODY: ${{ toJSON(github.event.issue.body) }}
           ISSUE_URL: ${{ github.event.issue.html_url }}
         run: |
+          cat > payload.json <<EOF
+          {
+            "title": ${ISSUE_TITLE},
+            "body": ${ISSUE_BODY},
+            "url": "${ISSUE_URL}"
+          }
+          EOF
           curl -X POST "${{ secrets.LOGIC_APP_URL }}" \
             -H "Content-Type: application/json" \
-            -d "{\"title\":${ISSUE_TITLE},\"body\":${ISSUE_BODY},\"url\":\"${ISSUE_URL}\"}"
+            -d @payload.json
