@@ -1,9 +1,7 @@
 name: Planning Agent Trigger
-
 on:
   issues:
     types: [labeled]
-
 jobs:
   dispatch-agent:
     if: github.event.label.name == 'product-feedback'
