@@ -9,6 +9,7 @@ jobs:
     steps:
       - name: Trigger Logic App
         env:
+          LOGIC_APP_URL: ${{ secrets.LOGIC_APP_URL }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
           ISSUE_URL: ${{ github.event.issue.html_url }}
@@ -18,6 +19,6 @@ jobs:
             --arg body "$ISSUE_BODY" \
             --arg url "$ISSUE_URL" \
             '{title: $title, body: $body, url: $url}' | \
-          curl -X POST "${{ secrets.LOGIC_APP_URL }}" \
+          curl -X POST "$LOGIC_APP_URL" \
             -H "Content-Type: application/json" \
             -d @-
