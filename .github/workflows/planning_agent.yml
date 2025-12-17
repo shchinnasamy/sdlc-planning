@@ -12,9 +12,9 @@ jobs:
       - name: Trigger Logic App
         run: |
           curl -X POST "${{ secrets.LOGIC_APP_URL }}" \
-          -H "Content-Type: application/json" \
+          -H "Content-Type: application/json" \          
           -d '{
-            "title": "${{ github.event.issue.title }}",
-            "body": ${{ toJSON(github.event.issue.body) }},
-            "url": "${{ github.event.issue.html_url }}"
-          }'
+          "title": "${{ github.event.issue.title }}",
+          "body": "${{ github.event.issue.body }}",
+          "url": "${{ github.event.issue.html_url }}"
+              }'
